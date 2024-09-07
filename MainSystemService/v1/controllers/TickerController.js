@@ -41,8 +41,8 @@ const createTicket = async (req, res) => {
 
 const updateTicketStatus = async (req, res) => {
     try {
-        const { ticketId } = req.params;  // Get ticket ID from URL params
-        const { status } = req.body;      // Get the status from the request body
+        const { ticketId } = req.params;
+        const { status } = req.body;
 
         // Ensure the ticket exists before updating
         const ticket = await TicketModel.findById(ticketId);

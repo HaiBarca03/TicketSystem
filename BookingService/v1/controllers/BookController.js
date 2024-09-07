@@ -37,13 +37,11 @@ const confirmBooking = async (req, res) => {
     try {
         const { bookingId } = req.params;
 
-        // Start Saga
         const booking = await Booking.findById(bookingId);
         if (!booking || booking.status !== 'pending') {
             throw new Error('Invalid booking');
         }
 
-        // Process payment
         const paymentResponse = await axios.post(`${process.env.PAYMENT_SERVICE_URL}/api/payment/process`, {
             bookingId
         });
@@ -65,5 +63,26 @@ const confirmBooking = async (req, res) => {
     }
 };
 
+const cancelExpiredBookings = async () => {
+    try {
+        const expiredBookings = await Booking.find({
+            status: 'pending',
+            expiresAt: { $lt: new Date() }
+        });
 
-module.exports = { createBooking, confirmBooking }
+        for (const booking of expiredBookings) {
+            booking.status = 'cancelled';
+            await booking.save();
+
+            await axios.put(`${process.env.MAIN_SERVICE_URL}/api/ticket/${booking.ticketId}`, { status: 'available' });
+
+            publishEvent('BookingExpired', { bookingId: booking._id, userId: booking.userId, ticketId: booking.ticketId });
+        }
+
+        console.log(`Cancelled ${expiredBookings.length} expired bookings`);
+    } catch (error) {
+        console.error('Error cancelling expired bookings:', error);
+    }
+};
+
+module.exports = { createBooking, confirmBooking, cancelExpiredBookings }

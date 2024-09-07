@@ -15,10 +15,12 @@ async function connectEventBus() {
 
 connectEventBus();
 
-exports.publishEvent = async (routingKey, message) => {
+const publishEvent = async (routingKey, message) => {
   try {
     channel.publish('ticket_exchange', routingKey, Buffer.from(JSON.stringify(message)));
   } catch (error) {
     console.error('Error publishing event:', error);
   }
 };
+
+module.exports = publishEvent
